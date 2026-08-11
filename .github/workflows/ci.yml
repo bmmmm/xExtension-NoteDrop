@@ -1,0 +1,288 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    # Tags run the whole job too, plus the version check below: a release is the
+    # one push nobody gets to redo.
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout source code
+        uses: actions/checkout@v7
+
+      # Pinned to the oldest PHP that FreshRSS 1.29 supports, so a syntax feature
+      # newer than the declared floor fails here rather than at a user's install.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      # The prunes are not redundant just because those directories happen to be
+      # absent this early in the job: without them the check silently starts
+      # linting third-party PHP the day a step is reordered, and reports on code
+      # this repository does not own.
+      - name: Check PHP syntax
+        run: |
+          php -v
+          find . \( -path ./vendor -o -path ./node_modules -o -path ./.freshrss-core \) -prune -o \
+            \( -name '*.php' -o -name '*.phtml' \) -print0 | xargs -0 -n1 php -l
+
+      # The CREATE TABLE runs exactly once per installation, so a statement only
+      # one backend accepts is invisible until it has already failed at a
+      # stranger's install. Exercised against real SQLite rather than mocked; the
+      # MySQL and PostgreSQL variants of the same statements run in the `schema`
+      # job below.
+      - name: Check the schema and the insert
+        run: php tests/schema.php
+
+      # `url` is the field FreshRSS' community extension list links its name to
+      # (app/views/extension/index.phtml), and it is the only pointer back to the
+      # source that travels inside the shipped directory. Checked like the rest, so
+      # dropping it takes a deliberate edit here.
+      - name: Check metadata.json is valid JSON
+        run: |
+          python3 -c "import json,sys; d=json.load(open('metadata.json')); \
+            [sys.exit('missing key: ' + k) for k in ('name','entrypoint','type','version','url') if k not in d]"
+
+      # Only on a tag. FreshRSS shows metadata.json's version in the extensions
+      # screen and compares it against the community list to decide whether an
+      # update is available, so a tag that says one thing while the file says
+      # another leaves every installation believing it is up to date.
+      - name: Check the tag matches the version in metadata.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          version=$(python3 -c "import json; print(json.load(open('metadata.json'))['version'])")
+          echo "tag=${tag} metadata.json version=${version}"
+          test "$tag" = "v${version}" \
+            || { echo "tag ${tag} does not match metadata.json version ${version} (expected v${version})"; exit 1; }
+
+      - name: Check the entrypoint matches the class name
+        run: |
+          entry=$(python3 -c "import json; print(json.load(open('metadata.json'))['entrypoint'])")
+          grep -q "class ${entry}Extension" extension.php \
+            || { echo "extension.php has no class ${entry}Extension"; exit 1; }
+
+      # registerController('x') binds three names that have to agree, and a
+      # mismatch is invisible until someone opens the page and gets a 404 from
+      # the dispatcher: Minz_Dispatcher includes Controllers/xController.php and
+      # instantiates FreshExtension_x_Controller (lib/Minz/Dispatcher.php).
+      - name: Check the controller file and class match registerController()
+        run: |
+          base=$(sed -n "s/.*registerController('\([a-zA-Z0-9]*\)').*/\1/p" extension.php)
+          test -n "$base" || { echo 'no registerController() call found in extension.php'; exit 1; }
+          echo "registered controller: $base"
+          test -f "Controllers/${base}Controller.php" \
+            || { echo "missing Controllers/${base}Controller.php"; exit 1; }
+          grep -q "class FreshExtension_${base}_Controller" "Controllers/${base}Controller.php" \
+            || { echo "Controllers/${base}Controller.php has no class FreshExtension_${base}_Controller"; exit 1; }
+          # Minz_Request filters the controller name with ctype_alnum, so a base
+          # name carrying a separator can never be routed to at all.
+          php -r 'exit(ctype_alnum($argv[1]) ? 0 : 1);' "$base" \
+            || { echo "controller base name '$base' is not alphanumeric"; exit 1; }
+
+      - name: Check JavaScript syntax
+        run: |
+          node --version
+          find static -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      # A missing key does not fail loudly at runtime — FreshRSS renders the key
+      # itself, so an untranslated page looks like a typo rather than a bug.
+      - name: Check every translation key used by the extension exists
+        run: |
+          php -r '
+            $source = "";
+            foreach (["extension.php", "configure.phtml"] as $file) {
+              $source .= file_get_contents($file);
+            }
+            foreach (array_merge(glob("Controllers/*.php"), glob("views/*/*.phtml")) as $file) {
+              $source .= file_get_contents($file);
+            }
+            preg_match_all("/_t\(.ext\.note_drop\.([a-z_.]+)./", $source, $m);
+            $keys = array_values(array_unique($m[1]));
+            if (count($keys) < 8) {
+              fwrite(STDERR, "only " . count($keys) . " keys found - did the pattern stop matching?\n");
+              exit(1);
+            }
+            echo count($keys), " keys used\n";
+            foreach (glob("i18n/*/ext.php") as $file) {
+              $flat = [];
+              $walk = function (array $node, string $prefix) use (&$walk, &$flat): void {
+                foreach ($node as $key => $value) {
+                  is_array($value) ? $walk($value, "$prefix$key.") : $flat[] = "$prefix$key";
+                }
+              };
+              $walk(require $file, "");
+              foreach ($keys as $key) {
+                if (!in_array("note_drop.$key", $flat, true)) {
+                  fwrite(STDERR, "$file is missing note_drop.$key\n");
+                  exit(1);
+                }
+              }
+              echo "$file ok\n";
+            }
+          '
+
+      # Everything above needs nothing but the runner — including the PHP checks,
+      # which is the point of the ordering: a toolchain the steps below pull over
+      # the network cannot take them down with it.
+      #
+      # `!cancelled()` from here on for the same reason, one layer further in:
+      # the two toolchains are unrelated, so one being unavailable must not hide
+      # what the other would have said. A real failure still fails the job; this
+      # only stops one from masking the rest.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        if: ${{ !cancelled() }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install JS dev dependencies
+        if: ${{ !cancelled() }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Run the helper tests
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail   # otherwise the pipe below reports tee's exit code
+          # Pin the reporter: the default differs between Node versions and the
+          # guard below parses its output. The glob rather than `tests/`: newer
+          # Node reads a bare directory as a module path and reports zero tests,
+          # and a test file added tomorrow cannot be silently skipped.
+          node --test --test-reporter=tap tests/*.test.js | tee test.log
+          # `node --test` exits 0 on a run where everything was skipped, and on a
+          # run that found no files at all, so the counts are read back.
+          passed=$(sed -n 's/^# pass \([0-9]*\)$/\1/p' test.log)
+          skipped=$(sed -n 's/^# skipped \([0-9]*\)$/\1/p' test.log)
+          echo "passed=${passed:-0} skipped=${skipped:-0}"
+          test "${skipped:-0}" -eq 0 || { echo 'a test was skipped'; exit 1; }
+          test "${passed:-0}" -gt 0 || { echo 'no test ran at all'; exit 1; }
+
+      - name: Check JavaScript style (ESLint)
+        if: ${{ !cancelled() }}
+        run: pnpm run eslint
+
+      # PHPStan needs the FreshRSS core classes this extension extends
+      # (Minz_Extension, Minz_ModelPdo and friends), which do not live in this
+      # repository. Mirrors how github.com/FreshRSS/Extensions lints third-party
+      # extensions: check core out as a sibling directory purely to resolve those
+      # classes, excluded from analysis itself (see phpstan.neon).
+      - name: Git checkout FreshRSS core for PHPStan
+        if: ${{ !cancelled() }}
+        uses: actions/checkout@v7
+        with:
+          repository: FreshRSS/FreshRSS
+          # The oldest release this extension supports, so using anything newer
+          # than it fails the build rather than a stranger's install.
+          ref: '1.29.0'
+          path: .freshrss-core
+          persist-credentials: false
+
+      - name: Use Composer cache
+        if: ${{ !cancelled() }}
+        id: composer-cache
+        uses: actions/cache@v6
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install PHP dev dependencies
+        if: ${{ !cancelled() }}
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Check PHP code style (PHP_CodeSniffer, FreshRSS' ruleset)
+        if: ${{ !cancelled() }}
+        run: vendor/bin/phpcs .
+
+      - name: Static analysis (PHPStan)
+        if: ${{ !cancelled() }}
+        run: vendor/bin/phpstan analyse --no-progress
+
+  # The extension writes three dialects of the same schema and the development
+  # installation only ever runs one of them. SQLite is covered in the job above,
+  # where it costs nothing; these two need a server, so they get one. Without this
+  # the MySQL and PostgreSQL statements ship as prose that has never been executed.
+  schema:
+    runs-on: ubuntu-latest
+    strategy:
+      # Both legs always run: knowing that one dialect is broken says nothing
+      # about the other.
+      fail-fast: false
+      matrix:
+        include:
+          - backend: mysql
+            dsn: 'mysql:host=127.0.0.1;port=3306;dbname=notedrop'
+            user: root
+            password: notedrop
+            extension: pdo_mysql
+          - backend: pgsql
+            dsn: 'pgsql:host=127.0.0.1;port=5432;dbname=notedrop'
+            user: postgres
+            password: notedrop
+            extension: pdo_pgsql
+    # Both servers start for both legs: a service block cannot be selected by the
+    # matrix, and one idle container is cheaper than splitting this into two jobs
+    # that would then drift apart. The passwords are literals on purpose — these
+    # containers exist for the length of one job and hold nothing but a table this
+    # file's own test creates and drops.
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: notedrop
+          MYSQL_DATABASE: notedrop
+        ports:
+          - 3306:3306
+        # The container answers on the port before the server will accept a
+        # connection, so the job has to wait for the server rather than the socket.
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: notedrop
+          POSTGRES_DB: notedrop
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - name: Git checkout source code
+        uses: actions/checkout@v7
+
+      # Same floor as the lint job, plus the driver for this leg. setup-php builds
+      # neither by default.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: ${{ matrix.extension }}
+          coverage: none
+
+      - name: Check the schema and the insert on ${{ matrix.backend }}
+        env:
+          NOTEDROP_TEST_DSN: ${{ matrix.dsn }}
+          NOTEDROP_TEST_USER: ${{ matrix.user }}
+          NOTEDROP_TEST_PASSWORD: ${{ matrix.password }}
+        run: php tests/schema.php

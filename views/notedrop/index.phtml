@@ -1,0 +1,77 @@
+<?php
+	declare(strict_types=1);
+	/** @var NoteDropView $this */
+?>
+<main class="post content note-drop">
+	<h1><?= _t('ext.note_drop.title') ?></h1>
+
+	<form method="post" action="<?= _url('notedrop', 'add') ?>" class="note-drop-add">
+		<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />
+		<?php
+			// `required` blocks the empty submit in the browser; the script also
+			// guards the whitespace-only case, which the browser counts as filled
+			// in. The server treats an empty note as nothing to do either way.
+		?>
+		<textarea name="content" rows="3" required="required"
+			placeholder="<?= htmlspecialchars(_t('ext.note_drop.form.placeholder'), ENT_COMPAT, 'UTF-8') ?>"></textarea>
+		<button type="submit" class="btn btn-important"><?= _t('ext.note_drop.form.submit') ?></button>
+	</form>
+
+	<?php if ($this->notes === []) { ?>
+		<p class="alert alert-warn"><?= _t('ext.note_drop.empty') ?></p>
+	<?php } else { ?>
+		<ul class="note-drop-list">
+			<?php foreach ($this->notes as $note) {
+				// A note that is exactly one web link gets an open button. Matching
+				// ClickHistory's rule, only plain http(s) is ever made clickable: a
+				// `javascript:` URL pasted as a note stays text. The D modifier pins
+				// the anchor to the very end, so a trailing newline cannot smuggle a
+				// second line past the check.
+				$isWebLink = preg_match('%^https?://\S+$%iD', $note['content']) === 1;
+			?>
+				<li class="note-drop-item">
+					<p class="note-drop-content"><?= htmlspecialchars($note['content'], ENT_NOQUOTES, 'UTF-8') ?></p>
+					<div class="note-drop-actions">
+						<time datetime="<?= timestampToMachineDate($note['created_at']) ?>"><?=
+							timestamptodate($note['created_at']) ?></time>
+						<?php
+							// The outcome labels ride along as data attributes, already
+							// translated: the script needs no strings of its own and no
+							// JsVars hook to receive them through.
+						?>
+						<button type="button" class="btn note-drop-copy"
+							data-label-copied="<?= htmlspecialchars(_t('ext.note_drop.action.copied'), ENT_COMPAT, 'UTF-8') ?>"
+							data-label-failed="<?= htmlspecialchars(_t('ext.note_drop.action.copy_failed'), ENT_COMPAT, 'UTF-8') ?>"><?=
+							_t('ext.note_drop.action.copy') ?></button>
+						<?php if ($isWebLink) { ?>
+							<a class="btn" target="_blank" rel="noreferrer"
+								href="<?= htmlspecialchars($note['content'], ENT_COMPAT, 'UTF-8') ?>"><?=
+								_t('ext.note_drop.action.open') ?></a>
+						<?php } ?>
+						<form method="post" action="<?= _url('notedrop', 'delete') ?>">
+							<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />
+							<input type="hidden" name="id" value="<?= htmlspecialchars($note['id'], ENT_COMPAT, 'UTF-8') ?>" />
+							<button type="submit" class="btn btn-attention confirm"><?= _t('ext.note_drop.action.delete') ?></button>
+						</form>
+					</div>
+				</li>
+			<?php } ?>
+		</ul>
+
+		<div class="form-group form-actions">
+			<div class="group-controls">
+				<form method="post" action="<?= _url('notedrop', 'clear') ?>">
+					<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />
+					<?php
+						// The `confirm` class alone: core's init_confirm_action() reads
+						// `data-str-confirm` off document.body rather than the button, so
+						// a wording of our own could never be shown (see ClickHistory,
+						// verified against 1.29.1). The generic core message is what
+						// users get.
+					?>
+					<button type="submit" class="btn btn-attention confirm"><?= _t('ext.note_drop.action.clear') ?></button>
+				</form>
+			</div>
+		</div>
+	<?php } ?>
+</main>

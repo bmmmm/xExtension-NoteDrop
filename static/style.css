@@ -1,0 +1,55 @@
+/* Everything in here is scoped under .note-drop*, which exists nowhere but the
+   extension's own page. The page reuses the core's controls (.btn, .alert); what
+   is left is the shape of the form and the list. */
+
+.note-drop-add textarea {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	margin-bottom: 0.5rem;
+	/* The face the note will be shown in below, so what is typed is what will
+	   be seen. */
+	font: inherit;
+}
+
+.note-drop-list {
+	list-style: none;
+	margin: 1rem 0;
+	padding: 0;
+}
+
+.note-drop-item {
+	padding: 0.75rem 0;
+}
+
+/* A rule between notes rather than a card around each: two pasted paragraphs
+   already look like two notes, the line only settles where one ends. */
+.note-drop-item + .note-drop-item {
+	border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+.note-drop-content {
+	margin: 0 0 0.5rem;
+	/* The newlines of the note are part of the note; a pasted URL has no spaces
+	   to break at and must not decide the page width. */
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.note-drop-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.note-drop-actions time {
+	opacity: 0.7;
+	/* The date reads as one thing or not at all. */
+	white-space: nowrap;
+	margin-right: auto;
+}
+
+.note-drop-actions form {
+	margin: 0;
+}

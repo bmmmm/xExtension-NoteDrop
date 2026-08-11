@@ -1,0 +1,15 @@
+<?php
+	declare(strict_types=1);
+	/** @var NoteDropExtension $this */
+	// No settings to render: the extension has nothing to configure. What a user
+	// landing here actually needs is the way to the page itself, which lives in a
+	// dropdown that is easy to miss.
+?>
+<div class="form-group">
+	<div class="group-controls">
+		<p class="help">
+			<?= _t('ext.note_drop.conf.where_help') ?>
+			<a href="<?= _url('notedrop', 'index') ?>"><?= _t('ext.note_drop.menu') ?></a>
+		</p>
+	</div>
+</div>

@@ -1,0 +1,9 @@
+{
+	"name": "Note Drop",
+	"author": "bmmmm",
+	"description": "A drop box page: leave notes and links from one device, copy them on another with one click.",
+	"version": "0.1.0",
+	"entrypoint": "NoteDrop",
+	"type": "user",
+	"url": "https://github.com/bmmmm/xExtension-NoteDrop"
+}
