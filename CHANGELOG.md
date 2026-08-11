@@ -1,8 +1,9 @@
 # Changelog
 
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-08-11
 
-First release.
+First release, verified end to end on a live FreshRSS 1.29.1 (enable, drop a
+multi-line note, copy it back off the clipboard, open a link note, delete).
 
 * A **Note drop** page in the header menu: a textarea to drop a note or a link
   from any device, a list of every note newest first.

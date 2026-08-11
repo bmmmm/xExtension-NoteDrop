@@ -8,11 +8,14 @@
 	<form method="post" action="<?= _url('notedrop', 'add') ?>" class="note-drop-add">
 		<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />
 		<?php
-			// `required` blocks the empty submit in the browser; the script also
-			// guards the whitespace-only case, which the browser counts as filled
-			// in. The server treats an empty note as nothing to do either way.
+			// Deliberately no `required`: an empty required textarea is :invalid
+			// from the first paint, and FreshRSS themes style :invalid as a red
+			// dashed border — the page would open looking like a mistake had
+			// already been made (seen on the default dark theme, 1.29.1). The
+			// script blocks the empty and whitespace-only submit instead, and the
+			// server treats an empty note as nothing to do.
 		?>
-		<textarea name="content" rows="3" required="required"
+		<textarea name="content" rows="3"
 			placeholder="<?= htmlspecialchars(_t('ext.note_drop.form.placeholder'), ENT_COMPAT, 'UTF-8') ?>"></textarea>
 		<button type="submit" class="btn btn-important"><?= _t('ext.note_drop.form.submit') ?></button>
 	</form>

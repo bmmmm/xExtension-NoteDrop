@@ -3,9 +3,10 @@
 // The drop box page: one button per note that puts the note's text on the
 // clipboard, and a guard that keeps a whitespace-only note from being posted.
 (function () {
-	// Whether a note is worth submitting at all. `required` on the textarea
-	// already blocks the empty case in the browser; this also catches
-	// whitespace-only, which the browser counts as filled in.
+	// Whether a note is worth submitting at all — empty and whitespace-only are
+	// not. The textarea deliberately carries no `required` (themes paint an
+	// empty required field as an error, see the view), so this guard is the one
+	// in front of the browser; the server ignores an empty note regardless.
 	function isSubmittableNote(text) {
 		return typeof text === 'string' && text.trim() !== '';
 	}
