@@ -14,6 +14,7 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Git checkout source code
         uses: actions/checkout@v7
@@ -219,6 +220,7 @@ jobs:
   # the MySQL and PostgreSQL statements ship as prose that has never been executed.
   schema:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       # Both legs always run: knowing that one dialect is broken says nothing
       # about the other.
