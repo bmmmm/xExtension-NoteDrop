@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+* A long note is cut to its first six lines, with an **Expand** button to show
+  all of it and **Collapse** to cut it down again; a pasted article no longer
+  pushes every other note out of sight. Long means longer than six lines at
+  the width the note is shown at, so a paragraph cut on a phone can be whole
+  on a desktop; short notes look as before. **Copy** still copies the whole
+  note, and without JavaScript every note is shown in full. Checked in a
+  local FreshRSS 1.29.0 in headless Chrome at phone and desktop width, in five
+  themes, in English and German.
+
 ## 0.2.0 — 2026-10-01
 
 The page reworked for the phone, where it is meant to be used, and made

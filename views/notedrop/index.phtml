@@ -34,6 +34,7 @@
 				// the anchor to the very end, so a trailing newline cannot smuggle a
 				// second line past the check.
 				$isWebLink = preg_match('%^https?://\S+$%iD', $note['content']) === 1;
+				$contentId = 'note-drop-content-' . htmlspecialchars($note['id'], ENT_COMPAT, 'UTF-8');
 
 				// One shape for every note at every width: the date above the text,
 				// the actions in a row of their own below it. With the date sharing
@@ -43,7 +44,7 @@
 				<li class="note-drop-item">
 					<time class="note-drop-date" datetime="<?= timestampToMachineDate($note['created_at']) ?>"><?=
 						timestamptodate($note['created_at']) ?></time>
-					<p class="note-drop-content"><?= htmlspecialchars($note['content'], ENT_NOQUOTES, 'UTF-8') ?></p>
+					<p class="note-drop-content" id="<?= $contentId ?>"><?= htmlspecialchars($note['content'], ENT_NOQUOTES, 'UTF-8') ?></p>
 					<div class="note-drop-actions">
 						<?php
 							// The outcome labels ride along as data attributes, already
@@ -59,6 +60,18 @@
 								href="<?= htmlspecialchars($note['content'], ENT_COMPAT, 'UTF-8') ?>"><?=
 								_t('ext.note_drop.action.open') ?></a>
 						<?php } ?>
+						<?php
+							// Rendered for every note but `hidden`: whether a note is long
+							// enough to cut down depends on the width it is shown at, so the
+							// script measures and reveals it only where the text runs past
+							// the cut. Without the script it stays hidden and every note is
+							// shown in full, as before.
+						?>
+						<button type="button" class="btn note-drop-toggle" hidden
+							aria-expanded="false" aria-controls="<?= $contentId ?>"
+							data-label-expand="<?= htmlspecialchars(_t('ext.note_drop.action.expand'), ENT_COMPAT, 'UTF-8') ?>"
+							data-label-collapse="<?= htmlspecialchars(_t('ext.note_drop.action.collapse'), ENT_COMPAT, 'UTF-8') ?>"><?=
+							_t('ext.note_drop.action.expand') ?></button>
 						<?php
 							// Set apart at the far end of the row and in the plain button
 							// style: a red button on every note made deleting the loudest

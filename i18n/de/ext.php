@@ -18,6 +18,8 @@ return array(
 			'copied' => 'Kopiert',
 			'copy_failed' => 'Kopieren fehlgeschlagen — bitte von Hand markieren und kopieren',
 			'open' => 'Öffnen',
+			'expand' => 'Aufklappen',
+			'collapse' => 'Zuklappen',
 			'delete' => 'Löschen',
 			'clear' => 'Alle Notizen löschen',
 		),

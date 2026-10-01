@@ -18,6 +18,8 @@ return array(
 			'copied' => 'Copied',
 			'copy_failed' => 'Copying failed — select and copy by hand',
 			'open' => 'Open',
+			'expand' => 'Expand',
+			'collapse' => 'Collapse',
 			'delete' => 'Delete',
 			'clear' => 'Delete all notes',
 		),

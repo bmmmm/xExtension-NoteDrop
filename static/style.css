@@ -65,6 +65,18 @@
 	overflow-wrap: anywhere;
 }
 
+/* A long note is cut to its first lines until it is expanded, so one pasted
+   article cannot push every other note a few screens down. The script sets
+   the class, and only on a note it measured running past the cut: without
+   the script nothing is cut, and a short note never keeps the class. Copy
+   still takes the whole text — the cut is only how it is drawn. */
+.note-drop-content.note-drop-clamped {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 6;
+	overflow: hidden;
+}
+
 .note-drop-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -104,6 +116,11 @@
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
+}
+
+/* `hidden` alone loses to every `display` set on .btn, core's included. */
+.note-drop-actions .btn[hidden] {
+	display: none;
 }
 
 /* Touch screens: core's buttons are about 34px tall, short of the 44px a

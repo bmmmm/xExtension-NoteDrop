@@ -5,7 +5,7 @@ const { test } = require('node:test');
 
 // Loading the browser file under Node takes the `typeof document` branch and
 // yields the pure helpers; nothing here needs a DOM.
-const { isSubmittableNote, copyResultLabel } = require('../static/script.js');
+const { isSubmittableNote, copyResultLabel, isOverflowing, toggleLabel } = require('../static/script.js');
 
 test('a note with content is submittable', () => {
 	assert.equal(isSubmittableNote('hello'), true);
@@ -32,4 +32,26 @@ test('the copy outcome shows the label the page sent', () => {
 test('a missing label falls back to English rather than to nothing', () => {
 	assert.equal(copyResultLabel(true, {}), 'Copied');
 	assert.equal(copyResultLabel(false, {}), 'Copy failed');
+});
+
+test('a note that runs past the cut is overflowing', () => {
+	assert.equal(isOverflowing(400, 130), true);
+	assert.equal(isOverflowing(132, 130), true);
+});
+
+test('a note that fits, or is off by rounding only, is not', () => {
+	assert.equal(isOverflowing(130, 130), false);
+	assert.equal(isOverflowing(131, 130), false);
+	assert.equal(isOverflowing(60, 130), false);
+});
+
+test('the toggle shows the label the page sent for its state', () => {
+	const dataset = { labelExpand: 'Aufklappen', labelCollapse: 'Zuklappen' };
+	assert.equal(toggleLabel(false, dataset), 'Aufklappen');
+	assert.equal(toggleLabel(true, dataset), 'Zuklappen');
+});
+
+test('a missing toggle label falls back to English', () => {
+	assert.equal(toggleLabel(false, {}), 'Expand');
+	assert.equal(toggleLabel(true, {}), 'Collapse');
 });
