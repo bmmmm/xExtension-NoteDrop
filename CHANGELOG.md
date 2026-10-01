@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-01
 
 * A long note is cut to its first six lines, with an **Expand** button to show
   all of it and **Collapse** to cut it down again; a pasted article no longer
@@ -10,6 +10,11 @@
   note, and without JavaScript every note is shown in full. Checked in a
   local FreshRSS 1.29.0 in headless Chrome at phone and desktop width, in five
   themes, in English and German.
+* Development tooling only — none of this code ships with or runs in the
+  extension: the ESLint toolchain's indirect dependencies `js-yaml` (4.3.2)
+  and `brace-expansion` (1.1.21, 5.0.12) moved past the four advisories behind
+  the seven findings `pnpm audit` reported against them, and it now reports
+  none; PHPStan is at 2.2.16 and `globals` at 17.12.0.
 
 ## 0.2.0 — 2026-10-01
 
