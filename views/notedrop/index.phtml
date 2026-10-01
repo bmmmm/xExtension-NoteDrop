@@ -20,8 +20,11 @@
 		<button type="submit" class="btn btn-important"><?= _t('ext.note_drop.form.submit') ?></button>
 	</form>
 
-	<?php if ($this->notes === []) { ?>
-		<p class="alert alert-warn"><?= _t('ext.note_drop.empty') ?></p>
+	<?php if ($this->notes === []) {
+		// Plain text rather than an alert box: an empty drop box is the normal
+		// state of one that is being used, not something to warn about.
+	?>
+		<p class="note-drop-empty"><?= _t('ext.note_drop.empty') ?></p>
 	<?php } else { ?>
 		<ul class="note-drop-list">
 			<?php foreach ($this->notes as $note) {
@@ -31,12 +34,17 @@
 				// the anchor to the very end, so a trailing newline cannot smuggle a
 				// second line past the check.
 				$isWebLink = preg_match('%^https?://\S+$%iD', $note['content']) === 1;
+
+				// One shape for every note at every width: the date above the text,
+				// the actions in a row of their own below it. With the date sharing
+				// the action row, how long the date ran decided whether a button
+				// wrapped onto a line of its own, so no two notes lined up on a phone.
 			?>
 				<li class="note-drop-item">
+					<time class="note-drop-date" datetime="<?= timestampToMachineDate($note['created_at']) ?>"><?=
+						timestamptodate($note['created_at']) ?></time>
 					<p class="note-drop-content"><?= htmlspecialchars($note['content'], ENT_NOQUOTES, 'UTF-8') ?></p>
 					<div class="note-drop-actions">
-						<time datetime="<?= timestampToMachineDate($note['created_at']) ?>"><?=
-							timestamptodate($note['created_at']) ?></time>
 						<?php
 							// The outcome labels ride along as data attributes, already
 							// translated: the script needs no strings of its own and no
@@ -51,30 +59,39 @@
 								href="<?= htmlspecialchars($note['content'], ENT_COMPAT, 'UTF-8') ?>"><?=
 								_t('ext.note_drop.action.open') ?></a>
 						<?php } ?>
-						<form method="post" action="<?= _url('notedrop', 'delete') ?>">
+						<?php
+							// Set apart at the far end of the row and in the plain button
+							// style: a red button on every note made deleting the loudest
+							// thing on the page and put it right next to Copy, under the
+							// thumb. Red is kept for the one action that cannot be undone
+							// note by note, "delete all" below; core's confirm guards both.
+						?>
+						<form class="note-drop-delete" method="post" action="<?= _url('notedrop', 'delete') ?>">
 							<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />
 							<input type="hidden" name="id" value="<?= htmlspecialchars($note['id'], ENT_COMPAT, 'UTF-8') ?>" />
-							<button type="submit" class="btn btn-attention confirm"><?= _t('ext.note_drop.action.delete') ?></button>
+							<button type="submit" class="btn confirm"><?= _t('ext.note_drop.action.delete') ?></button>
 						</form>
 					</div>
 				</li>
 			<?php } ?>
 		</ul>
 
-		<div class="form-group form-actions">
-			<div class="group-controls">
-				<form method="post" action="<?= _url('notedrop', 'clear') ?>">
-					<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />
-					<?php
-						// The `confirm` class alone: core's init_confirm_action() reads
-						// `data-str-confirm` off document.body rather than the button, so
-						// a wording of our own could never be shown (see ClickHistory,
-						// verified against 1.29.1). The generic core message is what
-						// users get.
-					?>
-					<button type="submit" class="btn btn-attention confirm"><?= _t('ext.note_drop.action.clear') ?></button>
-				</form>
-			</div>
-		</div>
+		<?php
+			// Not wrapped in core's `.form-group.form-actions`: that bar is sticky
+			// (made for long settings forms, whose save button must stay in reach),
+			// so on a phone it kept a red "delete all" floating over the notes, and
+			// on a wide screen it indented the button by the settings label column.
+		?>
+		<form class="note-drop-clear" method="post" action="<?= _url('notedrop', 'clear') ?>">
+			<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />
+			<?php
+				// The `confirm` class alone: core's init_confirm_action() reads
+				// `data-str-confirm` off document.body rather than the button, so
+				// a wording of our own could never be shown (see ClickHistory,
+				// verified against 1.29.1). The generic core message is what
+				// users get.
+			?>
+			<button type="submit" class="btn btn-attention confirm"><?= _t('ext.note_drop.action.clear') ?></button>
+		</form>
 	<?php } ?>
 </main>

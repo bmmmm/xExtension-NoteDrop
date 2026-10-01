@@ -1,12 +1,27 @@
 /* Everything in here is scoped under .note-drop*, which exists nowhere but the
-   extension's own page. The page reuses the core's controls (.btn, .alert); what
-   is left is the shape of the form and the list. */
+   extension's own page. The page reuses the core's controls (.btn), so every
+   theme colours them; what is left is the shape of the form and the list.
+   Logical properties (inline-start/end) throughout, so a right-to-left
+   language mirrors the page instead of breaking it. */
+
+/* One column, centred: a drop box holds a few lines at a time, and with nothing
+   beside it (no sidebar, unlike the configuration pages) a full-width page put
+   the buttons a screen width away from the text they act on. Core's `.content`
+   already centres with `margin: auto`; this only caps the width. */
+.note-drop {
+	max-width: 50rem;
+}
 
 .note-drop-add textarea {
 	display: block;
 	width: 100%;
+	/* Core caps every textarea at 85vw, which left it visibly narrower than the
+	   list below on a phone. */
+	max-width: none;
 	box-sizing: border-box;
 	margin-bottom: 0.5rem;
+	/* Widening the box sideways would only push the page out of shape. */
+	resize: vertical;
 	/* The face the note will be shown in below, so what is typed is what will
 	   be seen. */
 	font: inherit;
@@ -14,7 +29,7 @@
 
 .note-drop-list {
 	list-style: none;
-	margin: 1rem 0;
+	margin: 1.5rem 0 1rem;
 	padding: 0;
 }
 
@@ -26,6 +41,19 @@
    already look like two notes, the line only settles where one ends. */
 .note-drop-item + .note-drop-item {
 	border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+/* Secondary to the note itself, and set in the same muted way as the
+   empty-box line, so the two read as the same kind of text. */
+.note-drop-date,
+.note-drop-empty {
+	opacity: 0.7;
+}
+
+.note-drop-date {
+	display: block;
+	font-size: 0.85em;
+	margin-bottom: 0.25rem;
 }
 
 .note-drop-content {
@@ -43,13 +71,63 @@
 	gap: 0.5rem;
 }
 
-.note-drop-actions time {
-	opacity: 0.7;
-	/* The date reads as one thing or not at all. */
-	white-space: nowrap;
-	margin-right: auto;
+/* `.post form` gives every form a 1rem margin, meant for whole settings
+   sections, not for a button inside a row — hence the doubled class, to
+   outweigh it. */
+.note-drop .note-drop-delete,
+.note-drop .note-drop-clear {
+	margin: 0;
 }
 
-.note-drop-actions form {
-	margin: 0;
+/* Delete sits at the far end of the row, away from Copy and Open. */
+.note-drop .note-drop-delete {
+	margin-inline-start: auto;
+}
+
+.note-drop-clear {
+	padding-bottom: 1rem;
+}
+
+/* An <a class="btn"> and a <button class="btn"> come out a pixel apart in
+   height in core; centring the label inside a flex box lines Open up with its
+   neighbours. */
+.note-drop-actions .btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+}
+
+/* Touch screens: core's buttons are about 34px tall, short of the 44px a
+   fingertip needs to hit reliably — on a page whose whole point is being used
+   from a phone. Keyed to the pointer rather than to the width, so a narrow
+   desktop window keeps core's compact controls. The px floor because some
+   themes shrink the root font (Mapco: 14px, which made 2.75rem 38.5px); the
+   rem keeps a larger user font growing the buttons with it. */
+@media (pointer: coarse) {
+	.note-drop .btn {
+		min-height: max(2.75rem, 44px);
+		min-width: max(2.75rem, 44px);
+		padding-inline: 1rem;
+	}
+
+	.note-drop-actions {
+		gap: 0.75rem;
+	}
+
+	/* Mobile Safari zooms the whole page into any field set below 16px the
+	   moment it is focused, and does not zoom back out after the note is
+	   dropped. Inheriting from core's `.post` (0.9em) made this one 14.4px. */
+	.note-drop-add textarea {
+		font-size: max(1em, 16px);
+	}
+}
+
+/* Core's own breakpoint for its mobile layout: the button to drop a note gets
+   the full width of the box it belongs to, where a thumb finds it without
+   aiming. */
+@media (max-width: 840px) {
+	.note-drop-add .btn {
+		width: 100%;
+	}
 }
