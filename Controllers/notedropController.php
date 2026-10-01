@@ -59,9 +59,10 @@ final class FreshExtension_notedrop_Controller extends FreshRSS_ActionController
 		// here. paramString() has already trimmed the ends.
 		$content = str_replace("\r\n", "\n", Minz_Request::paramString('content', true));
 		if ($content === '') {
-			// Nothing to store, nothing to report: the textarea is `required` and
-			// the script guards the whitespace-only case, so this is a hand-made
-			// POST — it gets the page back, like a GET would.
+			// Nothing to store, nothing to report: the script blocks the empty
+			// and the whitespace-only submit (the textarea carries no `required`,
+			// see the view), so this is a hand-made POST or one from a browser
+			// without the script — it gets the page back, like a GET would.
 			$this->backToIndex();
 			return;
 		}

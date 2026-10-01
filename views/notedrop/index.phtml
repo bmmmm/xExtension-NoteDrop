@@ -63,8 +63,8 @@
 							// Set apart at the far end of the row and in the plain button
 							// style: a red button on every note made deleting the loudest
 							// thing on the page and put it right next to Copy, under the
-							// thumb. Red is kept for the one action that cannot be undone
-							// note by note, "delete all" below; core's confirm guards both.
+							// thumb. Red is kept for "delete all" below, the one action that
+							// empties the whole box at once; core's confirm guards both.
 						?>
 						<form class="note-drop-delete" method="post" action="<?= _url('notedrop', 'delete') ?>">
 							<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />

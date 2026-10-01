@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0 — 2026-10-01
+
+The page reworked for the phone, where it is meant to be used, and made
+consistent. Checked in a local FreshRSS 1.29.0 in headless Chrome at phone
+width (390px, touch) and desktop width, in five themes (Origine light and
+dark, Nord, Swage, Mapco, Dark), in English and German.
+
+* Every note has the same shape: the date above the text, the actions in a
+  row of their own below it, Delete set apart at the far end of the row.
+  Before, a long date pushed buttons onto a line of their own.
+* Per-note Delete in the plain button style; red is kept for "delete all".
+  Both still ask for confirmation.
+* "Delete all notes" no longer floats over the notes at the bottom of the
+  screen (it sat in core's sticky settings bar), and is no longer indented
+  on a wide screen.
+* Where touch is the main input, every button is at least 44px tall, and the
+  text box is set at 16px or more — below that, mobile Safari zooms into a
+  field when it is tapped.
+* The text box is as wide as the list; on a narrow screen the button to drop
+  a note spans the full width. On a wide screen the page is a centred column.
+* An empty drop box says so in plain text instead of a warning box.
+
 ## 0.1.0 — 2026-08-11
 
 First release, verified end to end on a live FreshRSS 1.29.1 (enable, drop a

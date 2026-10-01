@@ -1,8 +1,9 @@
 /* Everything in here is scoped under .note-drop*, which exists nowhere but the
    extension's own page. The page reuses the core's controls (.btn), so every
    theme colours them; what is left is the shape of the form and the list.
-   Logical properties (inline-start/end) throughout, so a right-to-left
-   language mirrors the page instead of breaking it. */
+   Whatever differs between the start and the end of a line uses logical
+   properties (inline-start/end), so a right-to-left language mirrors the
+   page instead of breaking it. */
 
 /* One column, centred: a drop box holds a few lines at a time, and with nothing
    beside it (no sidebar, unlike the configuration pages) a full-width page put
@@ -88,6 +89,13 @@
 	padding-bottom: 1rem;
 }
 
+/* Spacing between buttons comes from the rows' gap alone. Nord gives every
+   .btn an outer margin of its own, which stopped Delete 0.6rem short of the
+   edge the text box ends at. */
+.note-drop .btn {
+	margin: 0;
+}
+
 /* An <a class="btn"> and a <button class="btn"> come out a pixel apart in
    height in core; centring the label inside a flex box lines Open up with its
    neighbours. */
@@ -116,8 +124,8 @@
 	}
 
 	/* Mobile Safari zooms the whole page into any field set below 16px the
-	   moment it is focused, and does not zoom back out after the note is
-	   dropped. Inheriting from core's `.post` (0.9em) made this one 14.4px. */
+	   moment it is focused. Inheriting from core's `.post` (0.9em) made this
+	   one 14.4px. */
 	.note-drop-add textarea {
 		font-size: max(1em, 16px);
 	}
